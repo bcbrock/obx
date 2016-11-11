@@ -124,18 +124,18 @@ func (s *Stats) report(cfg *Config) {
 			}
 		}
 
-		dBest, dMean, d90, d95, dWorst := percentiles(bDuration, 1)
-		tBest, tMean, t90, t95, tWorst := percentiles(bTPS, -1)
-		bBest, bMean, b90, b95, bWorst := percentiles(bBPS, -1)
+		dBest, dMedian, d90, d95, dWorst := percentiles(bDuration, 1)
+		tBest, tMedian, t90, t95, tWorst := percentiles(bTPS, -1)
+		bBest, bMedian, b90, b95, bWorst := percentiles(bBPS, -1)
 
-		fmt.Printf("Broadcast Clients  :       Best       Mean        90%%        95%%      Worst\n")
+		fmt.Printf("Broadcast Clients  :       Best     Median        90%%        95%%      Worst\n")
 		fmt.Printf("    Duration Sec.  : %10.3f %10.3f %10.3f %10.3f %10.3f\n",
-			dBest, dMean, d90, d95, dWorst)
+			dBest, dMedian, d90, d95, dWorst)
 		fmt.Printf("    Tx Per Sec.    : %10s %10s %10s %10s %10s\n",
-			commafy(int64(tBest)), commafy(int64(tMean)), commafy(int64(t90)),
+			commafy(int64(tBest)), commafy(int64(tMedian)), commafy(int64(t90)),
 			commafy(int64(t95)), commafy(int64(tWorst)))
 		fmt.Printf("    Bytes Per Sec. : %10s %10s %10s %10s %10s\n",
-			commafy(int64(bBest)), commafy(int64(bMean)), commafy(int64(b90)),
+			commafy(int64(bBest)), commafy(int64(bMedian)), commafy(int64(b90)),
 			commafy(int64(b95)), commafy(int64(bWorst)))
 	}
 
@@ -161,34 +161,34 @@ func (s *Stats) report(cfg *Config) {
 			}
 		}
 
-		dBest, dMean, d90, d95, dWorst := percentiles(dDuration, 1)
-		tBest, tMean, t90, t95, tWorst := percentiles(dTPS, -1)
-		bBest, bMean, b90, b95, bWorst := percentiles(dBPS, -1)
+		dBest, dMedian, d90, d95, dWorst := percentiles(dDuration, 1)
+		tBest, tMedian, t90, t95, tWorst := percentiles(dTPS, -1)
+		bBest, bMedian, b90, b95, bWorst := percentiles(dBPS, -1)
 
-		fmt.Printf("Deliver Clients    :       Best       Mean        90%%        95%%      Worst\n")
+		fmt.Printf("Deliver Clients    :       Best     Median      90%%        95%%      Worst\n")
 		fmt.Printf("    Duration Sec.  : %10.3f %10.3f %10.3f %10.3f %10.3f\n",
-			dBest, dMean, d90, d95, dWorst)
+			dBest, dMedian, d90, d95, dWorst)
 		fmt.Printf("    Tx Per Sec.    : %10s %10s %10s %10s %10s\n",
-			commafy(int64(tBest)), commafy(int64(tMean)), commafy(int64(t90)),
+			commafy(int64(tBest)), commafy(int64(tMedian)), commafy(int64(t90)),
 			commafy(int64(t95)), commafy(int64(tWorst)))
 		fmt.Printf("    Bytes Per Sec. : %10s %10s %10s %10s %10s\n",
-			commafy(int64(bBest)), commafy(int64(bMean)), commafy(int64(b90)),
+			commafy(int64(bBest)), commafy(int64(bMedian)), commafy(int64(b90)),
 			commafy(int64(b95)), commafy(int64(bWorst)))
 	}
 
 	fmt.Printf("****************************************************************************\n")
 }
 
-// Compute best, mean, 90th and 95th percentiles and worst case from a slice
+// Compute best, median, 90th and 95th percentiles and worst case from a slice
 // of float64s. If the direction is negative, we sort in decreasing order.
-func percentiles(in []float64, direction int) (best, mean, p90, p95, worst float64) {
+func percentiles(in []float64, direction int) (best, median, p90, p95, worst float64) {
 	if direction >= 0 {
 		sort.Sort(sort.Float64Slice(in))
 	} else {
 		sort.Sort(sort.Reverse(sort.Float64Slice(in)))
 	}
 	best = in[0]
-	mean = in[int(.5*float64(len(in)))]
+	median = in[int(.5*float64(len(in)))]
 	p90 = in[int(.9*float64(len(in)))]
 	p95 = in[int(.95*float64(len(in)))]
 	worst = in[len(in)-1]
