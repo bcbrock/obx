@@ -22,11 +22,16 @@ import (
 	"strconv"
 	"time"
 
-	ab "github.com/hyperledger/fabric/orderer/atomicbroadcast"
-	context "golang.org/x/net/context"
-	"google.golang.org/grpc"
+	"github.com/golang/protobuf/proto"
+
+	"github.com/hyperledger/fabric/protos/common"
+	"github.com/hyperledger/fabric/protos/orderer"
 
 	"github.com/op/go-logging"
+
+	"golang.org/x/net/context"
+	
+	"google.golang.org/grpc"
 )
 
 // The broadcast client is called as
@@ -79,7 +84,7 @@ func broadcast() {
 		logger.Fatalf("Broadcast client %v did not connect to %s: %s\n",
 			client, cfg.Bservers[server], err)
 	}
-	iface := ab.NewAtomicBroadcastClient(connection)
+	iface := orderer.NewAtomicBroadcastClient(connection)
 	stream, err := iface.Broadcast(context.Background())
 	if err != nil {
 		logger.Fatalf("Broadcast client %v to server %s; Failed to invoke broadcast RPC: %s",
@@ -93,8 +98,8 @@ func broadcast() {
 
 	// Do the broadcast
 
-	message := ab.BroadcastMessage{}
-	message.Data = make([]byte, cfg.Payload)
+	message := &common.Envelope{}
+	data := make([]byte, cfg.Payload)
 
 	header := TxHeader{
 		Server:  uint16(server),
@@ -111,9 +116,15 @@ func broadcast() {
 
 			header.Sequence = uint32(tx)
 			header.Tbroadcast = timestamp
-			header.Put(message.Data)
+			header.Put(data)
 
-			err := stream.Send(&message)
+			payload, err := proto.Marshal(&common.Payload{Data: data})
+			if err != nil {
+				logger.Fatalf("Payload marshaling failed: %s", err)
+			}
+			message.Payload = payload
+
+			err = stream.Send(message)
 			if err != nil {
 				logger.Fatalf("Broadcast client %v: Send() error: %s",
 					client, err)
@@ -146,7 +157,7 @@ func broadcast() {
 
 // broadcastReplies handles the broadcast ACKs
 func broadcastReplies(
-	client *Client, stream ab.AtomicBroadcast_BroadcastClient,
+	client *Client, stream orderer.AtomicBroadcast_BroadcastClient,
 	tx int, done chan int) {
 
 	for count := 0; count < tx; count++ {

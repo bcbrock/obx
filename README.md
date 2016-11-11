@@ -2,11 +2,12 @@
 
 **obx** is an _Ordering_ service _Benchmarking_ and _eXerciser_ application
 for the [Hyperledger fabric](https://github.com/hyperledger/fabric)
-(HLF). This is a simple application for performance and correctness testing of
-the HLF _ordering services_. Services is plural here because there are
-currently several ordering servers defined in the HLF codebase that share a
-common protocol interface exercised by this application. **obx** is designed
-to stress and measure both throughput and latency of the ordering service.
+(HLF). This is a simple application (a glorified script, really) for
+performance and correctness testing of the HLF _ordering services_. Services
+is plural here because there are currently several ordering servers defined in
+the HLF codebase that share a common protocol interface exercised by this
+application. **obx** is designed to stress and measure both throughput and
+latency of the ordering service.
 
 Some observations on the implementation and use of **obx** can be found
 [here](observations.md).

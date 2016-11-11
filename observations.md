@@ -4,7 +4,7 @@ not remain valid over time.
 <a name="GoroutinesVsProcesses"></a>
 # Goroutines vs. Processes
 
-November 10, 2016
+November 11, 2016
 
 The **obx** application is written in Go, which may lead one to wonder why
 **obx** spawns the clients as processes rather than simply using
@@ -25,11 +25,11 @@ variability in performance compared to the goroutine implementation.
 
 This result raises some obvious concerns. It suggests (but certainly does not
 prove) that by relying solely on goroutines for parallelism in Hyperledger
-fabric (HLF) applications, we may be leaving signifcant amounts of performance
-on the table. Alternatively, it suggests that we may need to take a hard look
-at the heuristics and overhead of the current goroutine scheduler as it
-relates to HLF applications and propose alternatives better suited to our use
-cases.
+fabric (HLF) applications, we may be leaving significant amounts of
+performance on the table. It isn't clear yet whether this effect is due to the
+way that gRPC over HTTP/2 is implemented, or if it suggests that we may need
+to take a hard look at the heuristics and overhead of the current goroutine
+scheduler as it relates to HLF applications.
 
 
 # Observing Storage I/O Effects

@@ -22,11 +22,15 @@ import (
 	"strconv"
 	"time"
 
-	ab "github.com/hyperledger/fabric/orderer/atomicbroadcast"
+	"github.com/golang/protobuf/proto"
+
+	"github.com/hyperledger/fabric/protos/common"
+	"github.com/hyperledger/fabric/protos/orderer"
 
 	"github.com/op/go-logging"
 
-	context "golang.org/x/net/context"
+	"golang.org/x/net/context"
+
 	"google.golang.org/grpc"
 )
 
@@ -76,7 +80,7 @@ func deliver() {
 		logger.Fatalf("Deliver client %v could not connect to %s: %s\n",
 			client, cfg.Dservers[server], err)
 	}
-	iface := ab.NewAtomicBroadcastClient(connection)
+	iface := orderer.NewAtomicBroadcastClient(connection)
 	stream, err := iface.Deliver(context.Background())
 	if err != nil {
 		logger.Fatalf("Deliver client %v to server %s; Failed to invoke deliver RPC: %s",
@@ -86,14 +90,14 @@ func deliver() {
 	// Make the seek request. Then call back to signal that we're ready to
 	// run, obtaining the coordinated start time.
 
-	updateSeek := &ab.DeliverUpdate{
-		Type: &ab.DeliverUpdate_Seek{
-			Seek: &ab.SeekInfo{
+	updateSeek := &orderer.DeliverUpdate{
+		Type: &orderer.DeliverUpdate_Seek{
+			Seek: &orderer.SeekInfo{
 				WindowSize: uint64(cfg.Window),
 			},
 		},
 	}
-	updateSeek.GetSeek().Start = ab.SeekInfo_OLDEST
+	updateSeek.GetSeek().Start = orderer.SeekInfo_OLDEST
 
 	err = stream.Send(updateSeek)
 	if err != nil {
@@ -113,10 +117,12 @@ func deliver() {
 	var block int
 	var tx uint64
 	txDB := make([]TxHeader, cfg.TxDeliveredPerClient)
+	envelope := new(common.Envelope)
+	payload := new(common.Payload)
 
-	updateAck := &ab.DeliverUpdate{
-		Type: &ab.DeliverUpdate_Acknowledgement{
-			Acknowledgement: &ab.Acknowledgement{}, // Has a Number field
+	updateAck := &orderer.DeliverUpdate{
+		Type: &orderer.DeliverUpdate_Acknowledgement{
+			Acknowledgement: &orderer.Acknowledgement{}, // Has a Number field
 		},
 	}
 
@@ -129,7 +135,7 @@ func deliver() {
 		}
 
 		switch t := reply.GetType().(type) {
-		case *ab.DeliverResponse_Block:
+		case *orderer.DeliverResponse_Block:
 
 			timestamp := uint64(time.Since(tStart))
 
@@ -150,25 +156,37 @@ func deliver() {
 					client, t.Block.Header.Number)
 			}
 
-			for _, message := range t.Block.Data.Data {
-				if len(message) != cfg.Payload {
-					logger.Debugf(
-						"Deliver client %v: "+
-							"Unexpected message size %d at TX %d; "+
-							"Message ignored",
-						client, len(message), tx)
-					continue // Genesis messages are ignored
-				}
-				txDB[tx].Get(message)
-				txDB[tx].Tdelivered = timestamp
-				logger.Debugf("Deliver client %v: Header: %v", client, txDB[tx])
-				tx++
-				if tx == cfg.TxDeliveredPerClient {
-					break
+			for _, transaction := range t.Block.Data.Data {
+				err := proto.Unmarshal(transaction, envelope)
+				if err != nil {
+					logger.Warningf(
+						"Unmarshal to Envelope failed. Assumed orderer bug FAB-1092: %s",
+						err)
+				} else {
+					err = proto.Unmarshal(envelope.Payload, payload)
+					if err != nil {
+						logger.Fatalf("Unmarshal to Payload failed: %s", err)
+					}
+					message := payload.Data
+					if len(message) != cfg.Payload {
+						logger.Debugf(
+							"Deliver client %v: "+
+								"Unexpected message size %d at TX %d; "+
+								"Message ignored",
+							client, len(message), tx)
+						continue // Genesis messages are ignored
+					}
+					txDB[tx].Get(message)
+					txDB[tx].Tdelivered = timestamp
+					logger.Debugf("Deliver client %v: Header: %v", client, txDB[tx])
+					tx++
+					if tx == cfg.TxDeliveredPerClient {
+						break
+					}
 				}
 			}
 
-		case *ab.DeliverResponse_Error:
+		case *orderer.DeliverResponse_Error:
 			logger.Errorf(
 				"Deliver client %v: Orderer delivered error response: %s",
 				client, t.Error.String())
