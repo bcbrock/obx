@@ -149,14 +149,16 @@ where the optional arguments are processed by the Go
   per second. The actual network bandwidth requirement is higher due to block
   overhead such as hashes, metadata, and serialization overhead.
 
-* _-burst_
+* _-burst_ -
+
 * _-delay_ When broadcasting, the client bursts _-burst_ transactions
   back-to-back (default 1), then waits for the _-delay_ time before sending
   the next burst. The delay must be specified in a form understood by
   [time.ParseDuration()](https://golang.org/pkg/time/#ParseDuration), and
   defaults to 0.
 
-* _-window_
+* _-window_ -
+
 * _-ackEvery_ The _-window_ specifies the number of blocks that can be
   delivered without an ACK, defaulting to 100. The _-ackEvery_ parameter
   specifies the frequency of ACKs to the delivery service. This value must be
@@ -168,13 +170,16 @@ where the optional arguments are processed by the Go
   [time.ParseDuration()](https://golang.org/pkg/time/#ParseDuration), and
   defaults to 30s.
 
-* _-controlLogging_
-* _-broadcastLogging_
-* _-deliverLogging_
+* _-controlLogging_ -
+
+* _-broadcastLogging_ -
+
+* _-deliverLogging_ -
+
 * _-logLevel_ The logging level is a case-insensitive string chosen from
   `debug`, `info`, `note`, `warning` and `error`. The default is `info`. The
   logging level (_-logLevel_) normally applies to all of the control,
-  broadcast and deliver processes, but the logging level for each thread type
+  broadcast and deliver processes, but the logging level for each process type
   can also be specified independently using the eponymous flag.
 
 <a name="-broadcast"></a>
