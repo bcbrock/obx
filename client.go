@@ -16,6 +16,12 @@ limitations under the License.
 
 package main
 
+import (
+	"fmt"
+	"net/rpc"
+	"os"
+)
+
 const (
 	Broadcast = "Broadcast"
 	Deliver   = "Deliver"
@@ -34,7 +40,28 @@ type Client struct {
 // TX delivered on the wrong channel - both of which whould be 0.
 type DeliverClient struct {
 	Client
-	Elapsed float64
-	Missing uint64
+	Elapsed      float64
+	Missing      uint64
 	WrongChannel uint64
+}
+
+// ClientFailed is used in the Fail callback to signal failure
+type ClientFailed struct {
+	Client
+	err error
+}
+
+// fail signals client failure back to the controller, and fails the process.
+func (c *Client) fail(rpc *rpc.Client, format string, args ...interface{}) {
+	cf := &ClientFailed{
+		Client: *c,
+		err:    fmt.Errorf(format, args...),
+	}
+	logger.Criticalf("Client %v: Failing: %s", c, cf.err)
+	var ignore int
+	err := rpc.Call("Control.Fail", cf, &ignore)
+	if err != nil {
+		logger.Fatalf("Client %v: RPC Control.Fail failed:", err)
+	}
+	os.Exit(1)
 }

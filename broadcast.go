@@ -30,7 +30,7 @@ import (
 	"github.com/op/go-logging"
 
 	"golang.org/x/net/context"
-	
+
 	"google.golang.org/grpc"
 )
 
@@ -81,20 +81,22 @@ func broadcast() {
 	connection, err :=
 		grpc.Dial(cfg.Bservers[server], grpc.WithInsecure())
 	if err != nil {
-		logger.Fatalf("Broadcast client %v did not connect to %s: %s\n",
+		client.fail(rpcClient,
+			"Broadcast client %v did not connect to %s: %s\n",
 			client, cfg.Bservers[server], err)
 	}
 	iface := orderer.NewAtomicBroadcastClient(connection)
 	stream, err := iface.Broadcast(context.Background())
 	if err != nil {
-		logger.Fatalf("Broadcast client %v to server %s; Failed to invoke broadcast RPC: %s",
+		client.fail(rpcClient,
+			"Broadcast client %v to server %s; Failed to invoke broadcast RPC: %s",
 			client, cfg.Bservers[server], err)
 	}
 
 	// Start the ACK thread
 
 	done := make(chan int)
-	go broadcastReplies(&client, stream, cfg.Transactions, done)
+	go broadcastReplies(&client, stream, cfg.Transactions, done, rpcClient)
 
 	// Do the broadcast
 
@@ -120,13 +122,16 @@ func broadcast() {
 
 			payload, err := proto.Marshal(&common.Payload{Data: data})
 			if err != nil {
-				logger.Fatalf("Payload marshaling failed: %s", err)
+				client.fail(rpcClient,
+					"Broadcast client %v: Payload marshaling failed: %s",
+					client, err)
 			}
 			message.Payload = payload
 
 			err = stream.Send(message)
 			if err != nil {
-				logger.Fatalf("Broadcast client %v: Send() error: %s",
+				client.fail(rpcClient,
+					"Broadcast client %v: Send() error: %s",
 					client, err)
 			}
 
@@ -159,13 +164,14 @@ func broadcast() {
 // broadcastReplies handles the broadcast ACKs
 func broadcastReplies(
 	client *Client, stream orderer.AtomicBroadcast_BroadcastClient,
-	tx int, done chan int) {
+	tx int, done chan int, rpcClient *rpc.Client) {
 
 	for count := 0; count < tx; count++ {
 
 		reply, err := stream.Recv()
 		if err != nil {
-			logger.Fatalf("Ack client %v: Reply error at count %d: %s",
+			client.fail(rpcClient,
+				"Ack client %v: Reply error at count %d: %s",
 				client, count, err)
 		}
 

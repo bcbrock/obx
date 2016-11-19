@@ -77,13 +77,15 @@ func deliver() {
 	connection, err :=
 		grpc.Dial(cfg.Dservers[server], grpc.WithInsecure())
 	if err != nil {
-		logger.Fatalf("Deliver client %v could not connect to %s: %s\n",
+		client.fail(rpcClient,
+			"Deliver client %v could not connect to %s: %s\n",
 			client, cfg.Dservers[server], err)
 	}
 	iface := orderer.NewAtomicBroadcastClient(connection)
 	stream, err := iface.Deliver(context.Background())
 	if err != nil {
-		logger.Fatalf("Deliver client %v to server %s; Failed to invoke deliver RPC: %s",
+		client.fail(rpcClient,
+			"Deliver client %v to server %s; Failed to invoke deliver RPC: %s",
 			client, cfg.Dservers[server], err)
 	}
 
@@ -101,7 +103,8 @@ func deliver() {
 
 	err = stream.Send(updateSeek)
 	if err != nil {
-		logger.Fatalf("Deliver client %v: Failed to send updateSeek: %s",
+		client.fail(rpcClient,
+			"Deliver client %v: Failed to send updateSeek: %s",
 			client, err)
 	}
 
@@ -131,7 +134,8 @@ func deliver() {
 
 		reply, err := stream.Recv()
 		if err != nil {
-			logger.Fatalf("Deliver client %v: Reply error at block %d: %s",
+			client.fail(rpcClient,
+				"Deliver client %v: Reply error at block %d: %s",
 				client, block, err)
 		}
 
@@ -149,7 +153,7 @@ func deliver() {
 				updateAck.GetAcknowledgement().Number = t.Block.Header.Number
 				err = stream.Send(updateAck)
 				if err != nil {
-					logger.Fatalf(
+					client.fail(rpcClient,
 						"Deliver client %v: "+
 							"Failed to send ACK update to orderer: %s",
 						err)
@@ -167,7 +171,8 @@ func deliver() {
 				} else {
 					err = proto.Unmarshal(envelope.Payload, payload)
 					if err != nil {
-						logger.Fatalf("Unmarshal to Payload failed: %s", err)
+						client.fail(rpcClient,
+							"Unmarshal to Payload failed: %s", err)
 					}
 					message := payload.Data
 					if len(message) != cfg.Payload {
@@ -195,10 +200,9 @@ func deliver() {
 		}
 	}
 
-
 	// Check the results, that is to say, make sure that the TX received are
 	// the TX expected, and only those. Any errors are reported by the control
-	// process. 
+	// process.
 
 	elapsed := time.Since(tStart).Seconds() // Final timestamp
 
@@ -207,8 +211,8 @@ func deliver() {
 		t := &txDB[tx]
 		x :=
 			(uint64(t.Server) * uint64(cfg.Bclients) * uint64(cfg.Transactions)) +
-			(uint64(t.Client) * uint64(cfg.Transactions)) +
-			uint64(t.Sequence)
+				(uint64(t.Client) * uint64(cfg.Transactions)) +
+				uint64(t.Sequence)
 		checkDB[x] = true
 		if int(t.Channel) != channel {
 			wrongChannel++
@@ -223,9 +227,9 @@ func deliver() {
 	// We're out
 
 	done := &DeliverClient{
-		Client: client,
-		Elapsed: elapsed,
-		Missing: missing,
+		Client:       client,
+		Elapsed:      elapsed,
+		Missing:      missing,
 		WrongChannel: wrongChannel,
 	}
 	var ignore int

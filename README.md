@@ -82,15 +82,16 @@ then
   deliver all transactions (2 * 5 * 7000) for a channel from one server
   
 Each client is currently implemented as a separate process (see
-[Observations](observations.md#GoroutinesVsProcesses)), which is an instance of the **obx**
-executable. If something happens that causes this multitude of processes to
-not terminate, the system can be cleaned up by executing `pkill obx`.
+[Observations](observations.md#GoroutinesVsProcesses)), which is an instance
+of the **obx** executable. If something happens that causes this multitude of
+processes to not terminate, the system can be cleaned up by executing `pkill
+obx`.
 
-Each broadcast client runs until it has discharged its obligation to broadcast a
-fixed number of transactions. Each deliver client runs until it has delivered
-its required number of transactions. Note that although the transactions are
-tagged with their origins and timestamps, **obx** delivery clients currently
-simply count transactions - they don't actually verify what is being delivered.
+Each broadcast client runs until it has discharged its obligation to broadcast
+a fixed number of transactions, and each deliver client runs until it has
+delivered its required number of transactions. The transactions are tagged
+with their originating client and timestamps, allowing the **obx** delivery
+clients to verify that they are receiving the expected transactions.
 
 At the end of the run the application prints some performance statistics. You
 may also find it interesting to run real-time performance monitoring and
@@ -99,7 +100,7 @@ visualization tools such as
 
 ## Ordering Network Setup
 
-Under normal circumstances, **obx** is currently best used with a freshly
+Under normal circumstances, **obx** must be used with a freshly
 instantiated ordering service that is not being used for any other purpose, in
 order to make sure that the transactions being broadcast are the ones actually
 being delivered.  We may be able to relax this requirement in the future.
@@ -123,11 +124,14 @@ where the optional arguments are processed by the Go
 
 ## Required Parameters
 
-* _-bServers_ A comma-separated list of broadcast server addresses. If the delivery servers (_-dServers_) are not explicitly specified, then the broadcast servers are used for delivery as well.
+* _-bServers_ A comma-separated list of broadcast server addresses. If the
+  delivery servers (_-dServers_) are not explicitly specified, then the
+  broadcast servers are used for delivery as well.
 
 ## Optional Parameters
 
-* _-controlAddress_ The network address used by the controlling process to communicate with the clients, defaulting to `localhost:4000`.
+* _-controlAddress_ The network address used by the controlling process to
+  communicate with the clients, defaulting to `localhost:4000`.
 
 * _-dServers_ A comma-separated list of delivery server addresses. If the
   delivery servers are not explicitly specified, then the broadcast servers
@@ -225,7 +229,9 @@ These should be considered musings rather than commitments.
 * Modify **obx** to work against non-fresh ledgers.
 
 * Implement an option to run the clients as goroutines, either in a single
-  process, or in multiple processes each of which run several goroutines. 
+  process, or in multiple processes each of which run several goroutines. For
+  example it might be more realistic to have a broadcast and deliver client in
+  the same process.
 
 * Implement dynamic broadcast throttling that matches the broadcast and
   delivery rates in an attempt to find the true peak steady-state throughput

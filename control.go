@@ -73,7 +73,6 @@ func (c *Control) BroadcastDone(client *Client, ignore *int) error {
 	c.stats.Dbroadcast[client.Server][client.Channel][client.Client] =
 		time.Since(c.stats.Tstart).Seconds()
 	c.broadcastWG.Done()
-	*ignore = 0
 	return nil
 }
 
@@ -97,7 +96,14 @@ func (c *Control) DeliverDone(client *DeliverClient, ignore *int) error {
 		c.stats.DdeliverAll = client.Elapsed
 	}
 	c.deliverWG.Done()
-	*ignore = 0
+	return nil
+}
+
+// Fail in an RPC callback indicating that a client has failed for some
+// reason. This callback causes an immediate termination of the program.
+// Bug: The client.err is always coming back as NIL here.
+func (c *Control) Fail(client *ClientFailed, ignore *int) error {
+	logger.Fatalf("Client %v signals failure: %s", client.Client, client.err)
 	return nil
 }
 
