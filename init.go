@@ -26,7 +26,7 @@ import (
 func initLogging(level string) {
 	backend := logging.NewLogBackend(os.Stderr, "", 0)
 	logging.SetBackend(backend)
-	formatter := logging.MustStringFormatter("[%{time:15:04:05}] %{shortfile:18s}: %{color}[%{level:-5s}]%{color:reset} %{message}")
+	formatter := logging.MustStringFormatter("[%{time:15:04:05.000}] %{shortfile:18s}: %{color}[%{level:-5s}]%{color:reset} %{message}")
 	logging.SetFormatter(formatter)
 
 	ll, err := logging.LogLevel(level)

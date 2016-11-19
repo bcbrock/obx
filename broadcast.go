@@ -146,9 +146,10 @@ func broadcast() {
 	<-done
 
 	var ignore int
-	err = rpcClient.Call("Control.Done", client, &ignore)
+	err = rpcClient.Call("Control.BroadcastDone", client, &ignore)
 	if err != nil {
-		logger.Fatalf("Broadcast client %v: RPC Control.Done failed: %s",
+		logger.Fatalf(
+			"Broadcast client %v: RPC Control.BroadcastDone failed: %s",
 			client, err)
 	}
 

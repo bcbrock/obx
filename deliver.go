@@ -117,6 +117,7 @@ func deliver() {
 	var block int
 	var tx uint64
 	txDB := make([]TxHeader, cfg.TxDeliveredPerClient)
+	checkDB := make([]bool, cfg.TxDeliveredPerClient)
 	envelope := new(common.Envelope)
 	payload := new(common.Payload)
 
@@ -139,6 +140,7 @@ func deliver() {
 
 			timestamp := uint64(time.Since(tStart))
 
+			logger.Debugf("Block %v", t)
 			logger.Debugf("Deliver client %v: Block %d @ TX %d holds %d new TX",
 				client, t.Block.Header.Number, tx, len(t.Block.Data.Data))
 
@@ -193,12 +195,43 @@ func deliver() {
 		}
 	}
 
+
+	// Check the results, that is to say, make sure that the TX received are
+	// the TX expected, and only those. Any errors are reported by the control
+	// process. 
+
+	elapsed := time.Since(tStart).Seconds() // Final timestamp
+
+	var wrongChannel, missing uint64
+	for tx = 0; tx < cfg.TxDeliveredPerClient; tx++ {
+		t := &txDB[tx]
+		x :=
+			(uint64(t.Server) * uint64(cfg.Bclients) * uint64(cfg.Transactions)) +
+			(uint64(t.Client) * uint64(cfg.Transactions)) +
+			uint64(t.Sequence)
+		checkDB[x] = true
+		if int(t.Channel) != channel {
+			wrongChannel++
+		}
+	}
+	for tx = 0; tx < cfg.TxDeliveredPerClient; tx++ {
+		if !checkDB[tx] {
+			missing++
+		}
+	}
+
 	// We're out
 
+	done := &DeliverClient{
+		Client: client,
+		Elapsed: elapsed,
+		Missing: missing,
+		WrongChannel: wrongChannel,
+	}
 	var ignore int
-	err = rpcClient.Call("Control.Done", client, &ignore)
+	err = rpcClient.Call("Control.DeliverDone", done, &ignore)
 	if err != nil {
-		logger.Fatalf("Deliver client %v: RPC Control.Done failed: %s",
+		logger.Fatalf("Deliver client %v: RPC Control.DeliverDone failed: %s",
 			client, err)
 	}
 }

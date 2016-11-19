@@ -29,6 +29,8 @@ type Stats struct {
 	DdeliverAll   float64       // The duration of all deliver clients
 	Dbroadcast    [][][]float64 // The duration of each broadcast client
 	Ddeliver      [][][]float64 // The duration of each deliver client
+	Missing       uint64		// The composite # of missing TX
+	WrongChannel  uint64		// The composite # of TX on the wrong channel
 }
 
 // newStats initializes a Stats object.

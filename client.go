@@ -29,9 +29,12 @@ type Client struct {
 	Client  int
 }
 
-// ClientData represents a broadcast or deliver client for RPC callbacks that
-// require data.
-type ClientData struct {
+// DeliverClient represents the final status of a deliver client. It includes the
+// elapsed time (in float64-seconds), as well as the number of missing TX and
+// TX delivered on the wrong channel - both of which whould be 0.
+type DeliverClient struct {
 	Client
-	Data interface{}
+	Elapsed float64
+	Missing uint64
+	WrongChannel uint64
 }

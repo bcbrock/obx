@@ -67,18 +67,36 @@ func (c *Control) Tstart(client *Client, reply *time.Time) error {
 	return nil
 }
 
-// Done is an RPC callback indicating that a client is done.
-func (c *Control) Done(client *Client, ignore *int) error {
-	logger.Infof("Client %v signals Done", client)
-	if client.Type == Broadcast {
-		c.stats.Dbroadcast[client.Server][client.Channel][client.Client] =
-			time.Since(c.stats.Tstart).Seconds()
-		c.broadcastWG.Done()
-	} else {
-		c.stats.Ddeliver[client.Server][client.Channel][client.Client] =
-			time.Since(c.stats.Tstart).Seconds()
-		c.deliverWG.Done()
+// BroadcastDone is an RPC callback indicating that a broadcast client is done.
+func (c *Control) BroadcastDone(client *Client, ignore *int) error {
+	logger.Infof("Broadcast client %v signals Done", client)
+	c.stats.Dbroadcast[client.Server][client.Channel][client.Client] =
+		time.Since(c.stats.Tstart).Seconds()
+	c.broadcastWG.Done()
+	*ignore = 0
+	return nil
+}
+
+// DeliverDone is an RPC callback indicating that a deliver client is done.
+func (c *Control) DeliverDone(client *DeliverClient, ignore *int) error {
+	logger.Infof("Deliver client %v signals Done; Elapsed time %.3f",
+		client.Client, client.Elapsed)
+	c.stats.Ddeliver[client.Server][client.Channel][client.Client.Client] =
+		client.Elapsed
+	c.stats.Missing += client.Missing
+	c.stats.WrongChannel += client.WrongChannel
+	if c.stats.Missing != 0 {
+		logger.Errorf("Client %v: %d missing TX",
+			client.Client, client.Missing)
 	}
+	if c.stats.WrongChannel != 0 {
+		logger.Errorf("Client %v: %d TX on the wrong channel",
+			client.Client, client.WrongChannel)
+	}
+	if client.Elapsed > c.stats.DdeliverAll {
+		c.stats.DdeliverAll = client.Elapsed
+	}
+	c.deliverWG.Done()
 	*ignore = 0
 	return nil
 }
@@ -197,10 +215,13 @@ func control() {
 	}
 
 	// Nothing to do now but wait for delivery to complete, and print
-	// statistics.
+	// statistics. Note that deliver clients also do error checking, so their
+	// elapsed times are communicated back through the DeliverDone RPC.
 
 	control.deliverWG.Wait()
-	stats.DdeliverAll = time.Since(stats.Tstart).Seconds()
-
 	stats.report(cfg)
+
+	if (stats.Missing != 0) || (stats.WrongChannel != 0) {
+		logger.Fatalf("Aborting due to missing TX and/or channel errors")
+	}
 }
