@@ -37,7 +37,7 @@ type Client struct {
 
 // DeliverClient represents the final status of a deliver client. It includes the
 // elapsed time (in float64-seconds), as well as the number of missing TX and
-// TX delivered on the wrong channel - both of which whould be 0.
+// TX delivered on the wrong channel - both of which should be 0.
 type DeliverClient struct {
 	Client
 	Elapsed      float64
@@ -61,7 +61,7 @@ func (c *Client) fail(rpc *rpc.Client, format string, args ...interface{}) {
 	var ignore int
 	err := rpc.Call("Control.Fail", cf, &ignore)
 	if err != nil {
-		logger.Fatalf("Client %v: RPC Control.Fail failed:", err)
+		logger.Fatalf("Client %v: RPC Control.Fail failed: %s", c, err)
 	}
 	os.Exit(1)
 }
