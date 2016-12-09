@@ -24,6 +24,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
+	"github.com/hyperledger/fabric/orderer/common/bootstrap/provisional"
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/orderer"
 
@@ -100,10 +101,17 @@ func broadcast() {
 
 	// Do the broadcast
 
-	message := &common.Envelope{}
+	envelope := &common.Envelope{}
+	header :=
+		&common.Header{
+			ChainHeader: &common.ChainHeader{
+				ChainID: provisional.TestChainID,
+			},
+		}
 	data := make([]byte, cfg.Payload)
+	payload := &common.Payload{Header: header, Data: data}
 
-	header := TxHeader{
+	txHeader := TxHeader{
 		Server:  uint16(server),
 		Channel: uint16(channel),
 		Client:  uint16(clientIndex),
@@ -116,19 +124,19 @@ func broadcast() {
 
 			timestamp := uint64(time.Since(Tstart))
 
-			header.Sequence = uint32(tx)
-			header.Tbroadcast = timestamp
-			header.Put(data)
+			txHeader.Sequence = uint32(tx)
+			txHeader.Tbroadcast = timestamp
+			txHeader.Put(data)
 
-			payload, err := proto.Marshal(&common.Payload{Data: data})
+			payloadBytes, err := proto.Marshal(payload)
 			if err != nil {
 				client.fail(rpcClient,
 					"Broadcast client %v: Payload marshaling failed: %s",
 					client, err)
 			}
-			message.Payload = payload
+			envelope.Payload = payloadBytes
 
-			err = stream.Send(message)
+			err = stream.Send(envelope)
 			if err != nil {
 				client.fail(rpcClient,
 					"Broadcast client %v: Send() error: %s",

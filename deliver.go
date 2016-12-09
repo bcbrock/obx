@@ -24,6 +24,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
+	"github.com/hyperledger/fabric/orderer/common/bootstrap/provisional"
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/orderer"
 
@@ -96,6 +97,7 @@ func deliver() {
 		Type: &orderer.DeliverUpdate_Seek{
 			Seek: &orderer.SeekInfo{
 				WindowSize: uint64(cfg.Window),
+				ChainID:    provisional.TestChainID,
 			},
 		},
 	}
