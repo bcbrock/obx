@@ -248,10 +248,10 @@ func deliver() {
 func dumpLatencies(client *Client, cfg *Config, txDB []TxHeader) (err error) {
 	fileName :=
 		cfg.LatencyPrefix + "." +
-		strconv.Itoa(client.Server) + "." +
-		strconv.Itoa(client.Channel) + "." +
-		strconv.Itoa(client.Client) + "." +
-		"csv"
+			strconv.Itoa(client.Server) + "." +
+			strconv.Itoa(client.Channel) + "." +
+			strconv.Itoa(client.Client) + "." +
+			"csv"
 	path := filepath.Join(cfg.LatencyDir, fileName)
 	f, err := os.Create(path)
 	if err != nil {
@@ -280,7 +280,7 @@ func dumpLatencies(client *Client, cfg *Config, txDB []TxHeader) (err error) {
 		var tx TxHeader
 		for _, tx = range txDB {
 
-			if (tx.Tdelivered != blockTimestamp) {
+			if tx.Tdelivered != blockTimestamp {
 
 				print := blockTimestamp != 0
 				blockTimestamp = tx.Tdelivered
