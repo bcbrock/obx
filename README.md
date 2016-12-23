@@ -12,6 +12,17 @@ latency of the ordering service.
 Some observations on the implementation and use of **obx** can be found
 [here](observations.md).
 
+**obx** is currently up-to-date and works with the following Hyperledger
+fabric commit: 
+```
+commit e3b2d3f87e00f14400b1eaad2d7b49b96a8bf731
+Merge: 1b74e33 51abe0d
+Author: Christopher Ferris <chris.ferris@gmail.com>
+Date:   Fri Dec 23 18:51:38 2016 +0000
+
+    Merge "[FAB-1476] Have Vagrant env cd to fabric dir"
+```
+
 # Installation
 
 This application requires that the
@@ -174,7 +185,26 @@ where the optional arguments are processed by the Go
   in a form understood by
   [time.ParseDuration()](https://golang.org/pkg/time/#ParseDuration), and
   defaults to 30s.
+  
+* _-latencyAll_ -
 
+* _-latencyDir_ -
+
+* _-latencyPrefix_ If _-latencyDir_ is specified, then each deliver client
+  that completes successfully will write a CSV file in this directory
+  containing latency statistics for that client. The first line of the file
+  contains the field names. The _-latencyDir_ must exist. The files are named
+  \<latency prefix\>.\<Server\>.\<Channel\>.\<Client\>.csv. The default for
+  the \<latency prefix\> is "client", but this prefix can be changed with the
+  _-latencyPrefix_ option. The times recorded in the latency files are
+  floating-point seconds since the start of timing, and delta-times are also
+  in seconds. Times are recorded at a nanosecond resolution.
+  
+  By default only the block number, number of transactions in the block, block
+  delivery time, and the minimum and maximum latency for each block are
+  reported. Specify _-latencyAll=true_ to obtain reports that include data for
+  every transaction in every block.
+  
 * _-controlLogging_ -
 
 * _-broadcastLogging_ -
@@ -204,12 +234,14 @@ where the optional arguments are processed by the Go
  obx -bServers orderer:5151
  
  # Run 16 broadcast and 64 deliver clients against each of 3 servers, sending
- # 100K x 1K payloads to 10 channels
+ # 100K x 1K payloads to 10 channels. Also get block latency statistic reports.
+ mkdir latency
  obx \
 	-bServers bcast0:5151,bcast1:5151,bcast2:5151 \
 	-dServers dlvr0:5151,dlvr1:5151,dlvr2:5151 \
 	-bClients 16 -dClients 64 -channels 10 \
-	-payload 1000 -transactions 100000
+	-payload 1000 -transactions 100000 \
+	-latencyDir latency
 	
 ```
 
@@ -224,7 +256,8 @@ These should be considered musings rather than commitments.
 
 * Fix bugs.
 
-* Implement the latency statistics.
+* Implement more in the area of latency statistics. For example, statistics on
+  the latency of broadcast-to-ack. 
 
 * Modify **obx** to work against non-fresh ledgers.
 

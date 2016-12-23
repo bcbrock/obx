@@ -182,7 +182,11 @@ func broadcastReplies(
 				"Ack client %v: Reply error at count %d: %s",
 				client, count, err)
 		}
-
+		if reply.Status != common.Status_SUCCESS {
+			client.fail(rpcClient,
+				"Ack client %v: Unsuccessful response at count %d: %s",
+				client, count, reply.Status.String())
+		}
 		logger.Debugf("Ack client %v: Reply from orderer at count %d: %s",
 			client, count, reply.Status.String())
 	}

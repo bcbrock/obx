@@ -43,6 +43,9 @@ type Config struct {
 	Window           int           // # of blocks that can be delivered w/o ACK
 	AckEvery         int           // Deliver clients ack every (this many) blocks
 	Timeout          time.Duration // Initializtion timeout
+	LatencyAll       bool          // Print all latencies (vs. block latencies)?
+	LatencyDir       string        // Directory for latency files
+	LatencyPrefix    string        // Prefix for latency file names
 	ControlLogging   string        // Control application logging level
 	BroadcastLogging string        // Broadcast application logging level
 	DeliverLogging   string        // Deliver application logging level
@@ -149,6 +152,15 @@ func newConfig() *Config {
 
 	flag.DurationVar(&c.Timeout, "timeout", 30*time.Second,
 		"The initialization timeout, in the form required by time.ParseDuration(); Default 30s")
+
+	flag.BoolVar(&c.LatencyAll, "latencyAll", false,
+		"By default, only block latencies are reported. Set -latencyAll=true to report all transaction latencies")
+
+	flag.StringVar(&c.LatencyDir, "latencyDir", "",
+		"The directory to contain latency files; These files are only created if -latencyDir is specified")
+
+	flag.StringVar(&c.LatencyPrefix, "latencyPrefix", "client",
+		"Prefix for latency file names")
 
 	flag.StringVar(&logLevel, "logLevel", "info",
 		"The global logging level; Default 'info'")
