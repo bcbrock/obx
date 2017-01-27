@@ -107,6 +107,7 @@ func broadcast() {
 			ChainHeader: &common.ChainHeader{
 				ChainID: provisional.TestChainID,
 			},
+			SignatureHeader: &common.SignatureHeader{},
 		}
 	data := make([]byte, cfg.Payload)
 	payload := &common.Payload{Header: header, Data: data}

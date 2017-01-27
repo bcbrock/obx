@@ -30,6 +30,7 @@ import (
 	"github.com/hyperledger/fabric/orderer/common/bootstrap/provisional"
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/orderer"
+	"github.com/hyperledger/fabric/protos/utils"
 
 	"github.com/op/go-logging"
 
@@ -96,20 +97,29 @@ func deliver() {
 	// Make the seek request. Then call back to signal that we're ready to
 	// run, obtaining the coordinated start time.
 
-	seek := &orderer.SeekInfo{
-		ChainID: provisional.TestChainID,
-		Start: &orderer.SeekPosition{
-			Type: &orderer.SeekPosition_Oldest{
-				Oldest: &orderer.SeekOldest{},
+	seek := &common.Envelope{
+		Payload: utils.MarshalOrPanic(&common.Payload{
+			Header: &common.Header{
+				ChainHeader: &common.ChainHeader{
+					ChainID: provisional.TestChainID,
+				},
+				SignatureHeader: &common.SignatureHeader{},
 			},
-		},
-		Stop: &orderer.SeekPosition{
-			Type: &orderer.SeekPosition_Specified{
-				Specified: &orderer.SeekSpecified{
-					Number: math.MaxUint64},
-			},
-		},
-		Behavior: orderer.SeekInfo_BLOCK_UNTIL_READY,
+			Data: utils.MarshalOrPanic(&orderer.SeekInfo{
+				Start: &orderer.SeekPosition{
+					Type: &orderer.SeekPosition_Oldest{
+						Oldest: &orderer.SeekOldest{},
+					},
+				},
+				Stop: &orderer.SeekPosition{
+					Type: &orderer.SeekPosition_Specified{
+						Specified: &orderer.SeekSpecified{
+							Number: math.MaxUint64},
+					},
+				},
+				Behavior: orderer.SeekInfo_BLOCK_UNTIL_READY,
+			}),
+		}),
 	}
 
 	err = stream.Send(seek)

@@ -15,12 +15,11 @@ Some observations on the implementation and use of **obx** can be found
 **obx** is currently up-to-date and works with the following Hyperledger
 fabric commit: 
 ```
-commit e3b2d3f87e00f14400b1eaad2d7b49b96a8bf731
-Merge: 1b74e33 51abe0d
-Author: Christopher Ferris <chris.ferris@gmail.com>
-Date:   Fri Dec 23 18:51:38 2016 +0000
+commit 438700e6a2f05aa1092b58fe87c75fc7cbccacbe
+Author: Artem Barger <bartem@il.ibm.com>
+Date:   Thu Jan 26 13:36:19 2017 -0500
 
-    Merge "[FAB-1476] Have Vagrant env cd to fabric dir"
+    [FAB-1872]: Commit genessis block, joining chain.
 ```
 
 # Installation
